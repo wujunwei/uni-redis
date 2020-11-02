@@ -1,3 +1,3 @@
-module uni
+module github.com/wujunwei/uni-redis
 
-go 1.12
+go 1.15
