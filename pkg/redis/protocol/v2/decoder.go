@@ -3,7 +3,7 @@ package v2
 import (
 	"bufio"
 	"errors"
-	"github.com/wujunwei/uni-redis/redis/protocol"
+	"github.com/wujunwei/uni-redis/pkg/redis/protocol"
 	"strconv"
 )
 

@@ -1,8 +1,8 @@
 package redis
 
 import (
-	"github.com/wujunwei/uni-redis/redis/protocol"
-	v2 "github.com/wujunwei/uni-redis/redis/protocol/v2"
+	"github.com/wujunwei/uni-redis/pkg/redis/protocol"
+	v2 "github.com/wujunwei/uni-redis/pkg/redis/protocol/v2"
 )
 
 var defaultEncoder = &v2.RespEncoder{}
