@@ -3,23 +3,86 @@ package v2
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"github.com/wujunwei/uni-redis/pkg/redis/protocol"
 	"strconv"
 )
 
+//Reply : a safe redis response transfer,if the value doesn't support the kind which you choose ,it will offer a default-value
 type Reply struct {
+	isNIl bool
 	value interface{}
 	types byte
 }
 
-func (r Reply) parseInt() int {
-	return r.value.(int)
+func (r Reply) ParseInt() int {
+	if r.IsInteger() {
+		return r.value.(int)
+	}
+	if r.IsArray() {
+		return len(r.value.([]*Reply))
+	}
+	return 0
+}
+
+func (r Reply) ParseString() string {
+	if r.IsString() || r.IsError() {
+		return r.value.(string)
+	}
+	if r.IsBytes() {
+		return string(r.value.([]byte))
+	}
+	if r.IsInteger() {
+		return strconv.Itoa(r.value.(int))
+	}
+	if r.IsArray() {
+		return "array"
+	}
+	return "nil"
+}
+
+func (r Reply) ParseBytes() []byte {
+	if r.IsString() || r.IsError() {
+		return []byte(r.value.(string))
+	}
+	if r.IsBytes() {
+		return r.value.([]byte)
+	}
+	if r.IsInteger() {
+		return []byte(strconv.Itoa(r.value.(int)))
+	}
+	return nil
+}
+
+func (r Reply) ParseArray() []*Reply {
+	if !r.IsArray() {
+		return nil
+	}
+	return r.value.([]*Reply)
 }
 func (r Reply) Value() interface{} {
 	return r.value
 }
+func (r Reply) IsInteger() bool {
+	return r.types == Integer
+}
+func (r Reply) IsString() bool {
+	return r.types == SimpleString
+}
+func (r Reply) IsBytes() bool {
+	return r.types == BulkString
+}
+func (r Reply) IsArray() bool {
+	return r.types == Array
+}
 func (r Reply) IsError() bool {
 	return r.types == Error
+}
+func (r Reply) IsNil() bool {
+	return r.isNIl
+}
+func (r Reply) GetType() byte {
+	return r.types
 }
 
 var (
@@ -52,15 +115,16 @@ func (r *RespDecoder) decode(reader *bufio.Reader) (reply *Reply, err error) {
 	default:
 		err = UnKnownType
 	}
+	fmt.Println()
 	return
 }
 func (RespDecoder) readLine(reader *bufio.Reader) (string, error) {
-	temp, err := reader.ReadString(CR)
+	temp, err := reader.ReadBytes(CR)
 	if err != nil {
 		return "", err
 	}
 	_, _ = reader.Discard(1)
-	return temp, nil
+	return string(temp[:len(temp)-1]), nil
 }
 func (r *RespDecoder) decodeArray(reader *bufio.Reader) (reply *Reply, err error) {
 	reply = &Reply{types: Array}
@@ -73,6 +137,7 @@ func (r *RespDecoder) decodeArray(reader *bufio.Reader) (reply *Reply, err error
 			return
 		}
 	}
+	reply.value = val
 	return
 }
 func (r *RespDecoder) decodeInt(reader *bufio.Reader) (reply *Reply, err error) {
@@ -87,11 +152,12 @@ func (r *RespDecoder) decodeBulkString(reader *bufio.Reader) (reply *Reply, err 
 		types: BulkString,
 	}
 	integer, err := r.readLine(reader)
-	i, _ := strconv.Atoi(integer)
-	if i == -1 {
+	if integer == Null {
+		reply.isNIl = true
 		reply.value = nil
 		return
 	}
+	i, _ := strconv.Atoi(integer)
 	val := make([]byte, i)
 	_, err = reader.Read(val)
 	if err != nil {

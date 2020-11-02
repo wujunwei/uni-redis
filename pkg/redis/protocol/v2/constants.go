@@ -8,4 +8,5 @@ const (
 	Error        = '-'
 	CR           = '\r'
 	LF           = '\n'
+	Null         = "-1"
 )

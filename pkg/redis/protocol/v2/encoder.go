@@ -8,13 +8,13 @@ import (
 type RespEncoder struct {
 }
 
-func (e RespEncoder) Encode(param []interface{}) (bytes.Buffer, error) {
-	buf := bytes.Buffer{}
+func (e RespEncoder) Encode(param []interface{}) (*bytes.Buffer, error) {
+	buf := &bytes.Buffer{}
 	err := e.encodeArray(param, buf)
 	return buf, err
 }
 
-func (e RespEncoder) encodeArray(param []interface{}, buf bytes.Buffer) (err error) {
+func (e RespEncoder) encodeArray(param []interface{}, buf *bytes.Buffer) (err error) {
 	buf.WriteByte(Array)
 	buf.WriteString(strconv.Itoa(len(param)))
 	buf.WriteByte(CR)
@@ -50,7 +50,7 @@ func (e RespEncoder) encodeArray(param []interface{}, buf bytes.Buffer) (err err
 	return
 }
 
-func (e RespEncoder) encodeString(s string, buf bytes.Buffer) {
+func (e RespEncoder) encodeString(s string, buf *bytes.Buffer) {
 	buf.WriteByte(BulkString)
 	buf.WriteString(strconv.Itoa(len(s)))
 	buf.WriteByte(CR)
@@ -60,7 +60,7 @@ func (e RespEncoder) encodeString(s string, buf bytes.Buffer) {
 	buf.WriteByte(LF)
 }
 
-func (e RespEncoder) encodeIntegers(i int, buf bytes.Buffer) {
+func (e RespEncoder) encodeIntegers(i int, buf *bytes.Buffer) {
 	buf.WriteByte(Integer)
 	buf.WriteString(strconv.Itoa(i))
 	buf.WriteByte(CR)
